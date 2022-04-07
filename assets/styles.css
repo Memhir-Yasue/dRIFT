@@ -1,0 +1,38 @@
+body {
+  margin: 0px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 15vh;
+}
+
+#content {
+  height: 85vh;
+}
+
+#content > * {
+  height: 100%;
+  width: 50%;
+}
+
+#title {
+  margin-left: 1vw;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+#dropDownVariables {
+  width: 50vw;
+  align-self: center;
+  margin-right: 4vw;
+}
+
+#startBTN {
+  margin-right: 1vw;
+  width: 6vw;
+  height: 5vh;
+}
