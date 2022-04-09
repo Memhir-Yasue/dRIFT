@@ -1,58 +1,72 @@
 from cProfile import label
+from re import template
 from turtle import title
+from click import style
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
 
 app = Dash(__name__)
 
+axis = [{'label': "Income", "value": "Income"}, {"label": 'Risk', "value": "Risk_Variable"}, {"label": 'Finance', "value": "Some_Finance_Variable"}, {"label": 'Health', "value": "Some_Health_Variable"}, {"label": 'Social Media', "value": "Some_SocialMedia_Variable"}, {"label": "Base", "value": "base_value"}, {"label": "Outcome", "value": "outcome"}]
+
 app.layout = html.Div(children=[
     html.Div(
         id='header',
         children=[
-            html.H1(children='Model Drift Detection', id="title"),
+            html.H1(children='Shapley Drift', id="title"),
             dcc.Dropdown(
-                    id="dropDownVariables",
-                    options=[
-                        {'label': 'Prediction', 'value': 'x'},
-                        {'label': 'Feature: x', 'value': 'fx'},
-                        {'label': 'Feature: y', 'value': 'fy'},
-                    ],
+                    id="dropDownVariablesX",
+                    value="Income",
+                    options=axis,
+                    placeholder="x-axis",
                 ),
-            html.Button(
-                id="startBTN",
-                children='Start')
+            dcc.Dropdown(
+                    id="dropDownVariablesY",
+                    value="outcome",
+                    options=axis,
+                    placeholder="y-axis"
+                ),
         ]
     ),
     html.Div(
         id='content',
-            children=[
-                dcc.Graph(
-                    id="graph", style={"float": "left"}),
-                dcc.Graph(
-                    style={"float": "right"},
-                    id="graph2"),
-                dcc.Dropdown(id='names', value='day', clearable=False, style={"display": "none"}),
-            ]
-        
-    )
+        children=[
+            dcc.Graph(id="graph", style={"float": "left"}),
+            html.Div(id="rGraphs", children=[
+                dcc.Graph(id="graph2"),
+                dcc.Graph(id="graph3"),
+            ], style={"float": "right"}),
+        ]
+    ),
 ])
 
 @app.callback(
     Output("graph", "figure"), 
-    Input("names", "value"))
-def generate_chart(names):
+    Input("dropDownVariablesX", "value"),
+    Input("dropDownVariablesY", "value"),
+    )
+def generate_chart(dropDownVariablesX, dropDownVariablesY):
     all_shap = pd.read_parquet('Drift/shap.parquet')
-    all_shap = all_shap
-    fig = px.scatter(all_shap, x="Income", y="outcome", animation_frame="Iter", color="Race", hover_name="outcome")
+    fig = px.scatter(all_shap, x=dropDownVariablesX, y=dropDownVariablesY, animation_frame="Iter", color="Race", hover_name="outcome", template='plotly_dark')
     return fig
 
 @app.callback(
-    Output("graph2", "figure"), 
-    Input("names", "value"))
-def generate_chart(names):
+    Output("graph2", "figure"),
+    Input("dropDownVariablesX", "value"),
+    ) 
+def generate_chart(dropDownVariablesX):
     all_shap = pd.read_parquet('Drift/preds.parquet')
-    fig = px.scatter(all_shap, x="Pred", y="Iter", animation_frame="Iter", color="Race", hover_name="outcome")
+    fig = px.scatter(all_shap, x='Pred', color="Race", hover_name="Pred", template='plotly_dark')
+    return fig
+
+@app.callback(
+    Output("graph3", "figure"),
+    Input("dropDownVariablesX", "value"),
+    ) 
+def generate_chart(dropDownVariablesX):
+    all_shap = pd.read_parquet('Drift/preds.parquet')
+    fig = px.bar(all_shap, x='Race', color="Race", hover_name="Pred", template='plotly_dark')
     return fig
 
 if __name__ == '__main__':
