@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
+import shap
 
 from file_manager import FileManager
 
@@ -12,39 +13,55 @@ def main_pipeline():
     fm = FileManager(output_path='output_data')
 
     # load data
-    data = pd.read_parquet('META FINAL DATA/gan_16.parquet')
+    validation_data = pd.read_parquet('META FINAL DATA/validation_gan_1.parquet')
 
-    X = data.drop(['Approval', 'Race'], axis=1)
-    y = data[['Approval']]
+    shap_dfs = []
+    pred_dfs = []
+    for iter, f_name in enumerate(['gan_1.parquet', 'gan_2.parquet', 'gan_8.parquet']):
+        data = pd.read_parquet(f'META FINAL DATA/{f_name}')
 
-    # split data (for training and testing)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        X = data.drop(['Approval', 'Race'], axis=1)
+        y = data[['Approval']]
 
-    # train model
-    model = XGBClassifier(random_state=42)
-    model.fit(X_train.values, y_train.values)
+        # split data (for training and testing)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
-    # get model preds
-    preds = pd.DataFrame(model.predict(X_test), columns=['target_pred'])
+        # train model
+        model = XGBClassifier(random_state=42)
+        model.fit(X_train.values, y_train.values)
 
-    y_train.rename(columns={0: 'target_train'})
-    y_train.columns = y_train.columns.astype(str)
-    y_test.rename(columns={0: 'target_test'})
-    y_test.columns = y_test.columns.astype(str)
+        # get model preds
+        preds = pd.DataFrame(model.predict(X_test), columns=['target_pred'])
 
-    model_stats = {'accuracy': accuracy_score(y_test, model.predict(X_test))}
+        y_train.rename(columns={0: 'target_train'})
+        y_train.columns = y_train.columns.astype(str)
+        y_test.rename(columns={0: 'target_test'})
+        y_test.columns = y_test.columns.astype(str)
 
-    # write
-    output_path = fm.get_modified_output_path()
+        accuracy = accuracy_score(y_test, model.predict(X_test))
 
-    model.save_model(f'{output_path}/model.json')
-    with open(f'{output_path}/accuracy.json', 'w') as fp:
-        json.dump(model_stats, fp)
+        vd_no_leak = validation_data.drop(['Approval', 'Race'], axis=1)
 
-    # X_train.to_parquet(f'{output_path}/X_train_{year}.parquet')
-    # X_test.to_parquet(f'{output_path}/X_test_{year}.parquet')
-    # y_train.to_parquet(f'{output_path}/y_train_{year}.parquet')
-    # y_test.to_parquet(f'{output_path}/y_test_{year}.parquet')
-    # preds.to_parquet(f'{output_path}/pred_{year}.parquet')
+        validation_pred = pd.DataFrame(model.predict(vd_no_leak.values), columns=['Pred'], index=validation_data.index)
+        validation_pred['Race'] = validation_data['Race'].values
+        validation_pred['Iter'] = iter
+
+        explainer = shap.Explainer(model)
+        shap_values = explainer(vd_no_leak)
+        shap_df = pd.DataFrame(shap_values.values, columns=vd_no_leak.columns, index=vd_no_leak.index)
+        shap_df['base_value'] = shap_values.base_values
+        shap_df['outcome'] = shap_df.values.sum(axis=1)
+        shap_df['Race'] = validation_data['Race'].values
+        shap_df['Iter'] = iter
+
+        shap_dfs.append(shap_df)
+        pred_dfs.append(validation_pred)
+
+    all_preds = pd.concat(pred_dfs)
+    all_shap = pd.concat(shap_dfs)
+
+    all_preds.to_parquet('preds.parquet')
+    all_shap.to_parquet('shap.parquet')
+
 
 main_pipeline()
