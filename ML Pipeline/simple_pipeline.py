@@ -29,7 +29,7 @@ def main_pipeline():
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
         # train model
-        model = XGBClassifier(random_state=42)
+        model = XGBClassifier(n_estimators=500, random_state=42)
         model.fit(X_train.values, y_train.values)
 
         # get model preds
