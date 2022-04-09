@@ -8,7 +8,14 @@ import pandas as pd
 
 app = Dash(__name__)
 
-axis = [{'label': "Income", "value": "Income"}, {"label": 'Risk', "value": "Risk_Variable"}, {"label": 'Finance', "value": "Some_Finance_Variable"}, {"label": 'Health', "value": "Some_Health_Variable"}, {"label": 'Social Media', "value": "Some_SocialMedia_Variable"}, {"label": "Base", "value": "base_value"}, {"label": "Outcome", "value": "outcome"}]
+axis = [{'label': "Income", "value": "Income"},
+        {"label": 'Loaning Risk', "value": "Loaning Risk"},
+        {"label": 'Credit', "value": "Credit"},
+        {"label": 'Finance', "value": "Finance"},
+        {"label": 'Health', "value": "Health"},
+        {"label": 'Social Media', "value": "SocialMedia"},
+        {"label": "Base", "value": "base_value"},
+        {"label": "Outcome", "value": "outcome"}]
 
 app.layout = html.Div(children=[
     html.Div(
@@ -48,7 +55,7 @@ app.layout = html.Div(children=[
     )
 def generate_chart(dropDownVariablesX, dropDownVariablesY):
     all_shap = pd.read_parquet('Drift/shap.parquet')
-    fig = px.scatter(all_shap, x=dropDownVariablesX, y=dropDownVariablesY, animation_frame="Iter", color="Race", hover_name="outcome", template='plotly_dark')
+    fig = px.scatter(all_shap, x=dropDownVariablesX, y=dropDownVariablesY, animation_frame="Model Num", color="Race", hover_name="outcome", template='plotly_dark')
     return fig
 
 @app.callback(
@@ -56,7 +63,7 @@ def generate_chart(dropDownVariablesX, dropDownVariablesY):
     Input("dropDownVariablesX", "value"),
     ) 
 def generate_chart(dropDownVariablesX):
-    all_shap = pd.read_parquet('Drift/preds.parquet')
+    all_shap = pd.read_parquet('Drift/group_shap.parquet')
     fig = px.scatter(all_shap, x='Pred', color="Race", hover_name="Pred", template='plotly_dark')
     return fig
 
@@ -65,7 +72,7 @@ def generate_chart(dropDownVariablesX):
     Input("dropDownVariablesX", "value"),
     ) 
 def generate_chart(dropDownVariablesX):
-    all_shap = pd.read_parquet('Drift/preds.parquet')
+    all_shap = pd.read_parquet('Drift/group_shap.parquet')
     fig = px.bar(all_shap, x='Race', color="Race", hover_name="Pred", template='plotly_dark')
     return fig
 
