@@ -13,12 +13,13 @@ def main_pipeline():
     fm = FileManager(output_path='output_data')
 
     # load data
-    validation_data = pd.read_parquet('META FINAL DATA/gan_1.parquet')
-
+    'META FINAL DATA/gan_1.parquet'
+    validation_data = pd.read_parquet('Months/month1.parquet')
+    ['gan_1.parquet', 'gan_2.parquet', 'gan_3.parquet', 'gan_4.parquet', 'gan_5.parquet', 'gan_6.parquet']
     shap_dfs = []
     pred_dfs = []
-    for iter, f_name in enumerate(['gan_1.parquet', 'gan_2.parquet', 'gan_3.parquet', 'gan_4.parquet', 'gan_5.parquet', 'gan_6.parquet']):
-        data = pd.read_parquet(f'META FINAL DATA/{f_name}')
+    for iter, f_name in enumerate(['month1.parquet', 'month2.parquet', 'month3.parquet', 'month4.parquet', 'month5.parquet']):
+        data = pd.read_parquet(f'Months/{f_name}').sample(7000)
 
         X = data.drop(['Approval', 'Race'], axis=1)
         y = data[['Approval']]
