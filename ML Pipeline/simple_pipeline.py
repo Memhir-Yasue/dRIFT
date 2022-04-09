@@ -18,7 +18,8 @@ def main_pipeline():
 
     shap_dfs = []
     pred_dfs = []
-    for iter, f_name in enumerate(['gan_1.parquet', 'gan_2.parquet', 'gan_3.parquet', 'gan_4.parquet', 'gan_5.parquet', 'gan_6.parquet']):
+    files = [f'gan_{i}.parquet' for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]]
+    for iter, f_name in enumerate(files):
         data = pd.read_parquet(f'META FINAL DATA/{f_name}')
 
         X = data.drop(['Approval', 'Race'], axis=1)
@@ -45,7 +46,7 @@ def main_pipeline():
 
         validation_pred = pd.DataFrame(model.predict(vd_no_leak.values), columns=['Pred'], index=validation_data.index)
         validation_pred['Race'] = validation_data['Race'].values
-        validation_pred['Iter'] = iter
+        validation_pred['Model Num'] = iter
 
         explainer = shap.Explainer(model)
         shap_values = explainer(vd_no_leak)
@@ -53,7 +54,7 @@ def main_pipeline():
         shap_df['base_value'] = shap_values.base_values
         shap_df['outcome'] = shap_df.values.sum(axis=1)
         shap_df['Race'] = validation_data['Race'].values
-        shap_df['Iter'] = iter
+        shap_df['Model Num'] = iter
 
         shap_dfs.append(shap_df)
         pred_dfs.append(validation_pred)
@@ -61,8 +62,12 @@ def main_pipeline():
     all_preds = pd.concat(pred_dfs)
     all_shap = pd.concat(shap_dfs)
 
+    group_shap_df = all_shap.drop('Race', axis=1).groupby('Model Num').apply(lambda x: x.abs().sum())
+    group_shap_df['Model Num'] = list(group_shap_df.index)
+
     all_preds.to_parquet('preds.parquet')
     all_shap.to_parquet('shap.parquet')
+    group_shap_df.to_parquet('group_shap.parquet')
 
 
 main_pipeline()
