@@ -2,6 +2,7 @@ from cProfile import label
 from turtle import title
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
+import pandas as pd
 
 app = Dash(__name__)
 
@@ -41,16 +42,17 @@ app.layout = html.Div(children=[
     Output("graph", "figure"), 
     Input("names", "value"))
 def generate_chart(names):
-    df = px.data.tips() # replace with your own data source
-    fig = px.pie(df, names=names, hole=.3)
+    all_shap = pd.read_parquet('Drift/shap.parquet')
+    all_shap = all_shap
+    fig = px.scatter(all_shap, x="Income", y="outcome", animation_frame="Iter", color="Race", hover_name="outcome")
     return fig
 
 @app.callback(
     Output("graph2", "figure"), 
     Input("names", "value"))
 def generate_chart(names):
-    df = px.data.tips() # replace with your own data source
-    fig = px.pie(df, names=names, hole=.3)
+    all_shap = pd.read_parquet('Drift/preds.parquet')
+    fig = px.scatter(all_shap, x="Pred", y="Iter", animation_frame="Iter", color="Race", hover_name="outcome")
     return fig
 
 if __name__ == '__main__':
